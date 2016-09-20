@@ -5,7 +5,7 @@
  */
 
 
-  var parseDataRecords = function(arrayBuffer) {
+  export function parseDataRecords(arrayBuffer) {
 	var dataRecords = []
 	var offset = 0
 	while (offset < arrayBuffer.byteLength) {
@@ -164,7 +164,7 @@ function checkByteSwap(bTime) {
  * as the function timeOfSample(integer) set.
  * This assumes all data records are from the same channel.
  */
-  var merge = function(drList) {
+  export function merge(drList) {
     var out = [];
     var prevDR, currDR;
     var current;
@@ -214,7 +214,7 @@ function checkByteSwap(bTime) {
     return out;
 }
 
-  var byChannel = function(drList) {
+  export function byChannel(drList) {
     var out = {};
     var key;
     for (var i=0; i<drList.length; i++) {
@@ -229,4 +229,3 @@ function checkByteSwap(bTime) {
     return out;
 }
 
-let miniseed = { parseDataRecords, byChannel, merge, seedcodec };
