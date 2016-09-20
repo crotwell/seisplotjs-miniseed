@@ -4,6 +4,8 @@
  * http://www.seis.sc.edu
  */
 
+import * as seedcodec from 'seedcodec';
+
 
   export function parseDataRecords(arrayBuffer) {
 	var dataRecords = []

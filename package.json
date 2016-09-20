@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "Javascript library for parsing seismic data in miniseed format.",
   "main": "miniseed.js",
+  "dependencies": {
+    "seisplotjs-seedcodec": ">= 0.0.1"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "compile": "babel --presets es2015 -d lib/ src/",
