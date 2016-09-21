@@ -4,7 +4,7 @@
  * http://www.seis.sc.edu
  */
 
-import * as seedcodec from 'seedcodec';
+import * as seedcodec from 'seisplotjs-seedcodec';
 
 
   export function parseDataRecords(arrayBuffer) {
