@@ -2,7 +2,7 @@
   "name": "seisplotjs-miniseed",
   "version": "0.0.1",
   "description": "Javascript library for parsing seismic data in miniseed format.",
-  "main": "miniseed.js",
+  "main": "./lib/miniseed.js",
   "dependencies": {
     "seisplotjs-seedcodec": ">= 0.0.1"
   },
