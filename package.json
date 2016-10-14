@@ -4,7 +4,7 @@
   "description": "Javascript library for parsing seismic data in miniseed format.",
   "main": "./lib/miniseed.js",
   "dependencies": {
-    "seisplotjs-seedcodec": ">= 0.0.1"
+    "seisplotjs-seedcodec": ">= 1.0.0"
   },
   "scripts": {
     "test": "qunit -c ./lib/miniseed.js -t ./test/index.js",
