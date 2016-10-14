@@ -6,28 +6,27 @@
 
 import * as seedcodec from 'seisplotjs-seedcodec';
 
-
 export function parseDataRecords(arrayBuffer) {
-  let dataRecords = []
-  let offset = 0
+  let dataRecords = [];
+  let offset = 0;
   while (offset < arrayBuffer.byteLength) {
-    let dataView = new DataView(arrayBuffer, offset)
-    let dr = new DataRecord(dataView)
-    dataRecords.push(dr)
-    offset += dr.header.recordSize
+    let dataView = new DataView(arrayBuffer, offset);
+    let dr = new DataRecord(dataView);
+    dataRecords.push(dr);
+    offset += dr.header.recordSize;
   }
-  return dataRecords
-};
+  return dataRecords;
+}
 
 
 export class DataRecord {
   constructor(dataView) {
-    this.header = new DataHeader(dataView)
+    this.header = new DataHeader(dataView);
     this.length = this.header.numSamples;
   
     this.data = new DataView(dataView.buffer, 
                              dataView.byteOffset+this.header.dataOffset,
-                             this.header.recordSize-this.header.dataOffset)
+                             this.header.recordSize-this.header.dataOffset);
     }
   decompress() {
     let decompData = seedcodec.decompress(this.header.encoding, this.data, this.header.numSamples, this.header.littleEndian);
@@ -45,14 +44,14 @@ export class DataHeader {
   constructor(dataView) {
     let debugDR = "";
     this.seq = makeString(dataView, 0, 6);
-    this.typeCode = dataView.getUint8(6)
+    this.typeCode = dataView.getUint8(6);
     this.continuationCode = dataView.getUint8(7);
     this.staCode = makeString(dataView, 8, 5);
     this.locCode = makeString(dataView, 13, 2);
     this.chanCode = makeString(dataView, 15, 3);
     this.netCode = makeString(dataView, 18, 2);
-    this.startBTime = new BTime(dataView, 20)
-    let headerByteSwap = checkByteSwap(this.startBTime) 
+    this.startBTime = new BTime(dataView, 20);
+    let headerByteSwap = checkByteSwap(this.startBTime);
     if (headerByteSwap) {
       this.startBTime = new BTime(dataView, 20, headerByteSwap);
     }
@@ -68,12 +67,12 @@ export class DataHeader {
     this.blocketteOffset = dataView.getUint16(46, headerByteSwap);
     let offset = this.blocketteOffset;
     this.blocketteList = [];
-    this.recordSize = 4096
+    this.recordSize = 4096;
     for (let i=0; i< this.numBlockettes; i++) {
       let nextOffset = dataView.getUint16(offset+2, headerByteSwap);
       if (nextOffset == 0) {
         // last blockette
-        nextOffset = this.dataOffset
+        nextOffset = this.dataOffset;
       }
       if (nextOffset == 0) {
         nextOffset = offset; // zero length, probably an error...
@@ -85,9 +84,9 @@ export class DataHeader {
         this.recordSize = 1 << blockette.dataRecordLengthByte;
         this.encoding = blockette.encoding;
         if (blockette.wordOrder == 0) {
-          this.swapBytes = true
+          this.swapBytes = true;
         } else {
-          this.swapBytes = false
+          this.swapBytes = false;
         }
         this.littleEndian = (blockette.wordOrder === 0);
       }
@@ -95,11 +94,11 @@ export class DataHeader {
     this.sampleRate = this.calcSampleRate();
     this.start = this.startBTime.toDate();
     this.end = this.timeOfSample(this.numSamples-1);
-  };
+  }
 
   toString() {
     return this.netCode+"."+this.staCode+"."+this.locCode+"."+this.chanCode+" "+this.start.toISOString()+" "+this.encoding;
-  };
+  }
 
   calcSampleRate() {
     let factor = this.sampRateFac;
@@ -112,11 +111,11 @@ export class DataHeader {
                               (multiplier / Math.abs(multiplier)));
     }
     return sampleRate;
-  };
+  }
 
   timeOfSample(i) {
     return new Date(this.start.getTime() + 1000*i/this.sampleRate);
-  };
+  }
 }
 
 export class Blockette {
@@ -136,7 +135,7 @@ export class Blockette {
 function makeString(dataView, offset, length) {
   let out = "";
   for (let i=offset; i<offset+length; i++) {
-    out += String.fromCharCode(dataView.getUint8(i))
+    out += String.fromCharCode(dataView.getUint8(i));
   }
   return out.trim();
 }
@@ -152,14 +151,14 @@ export class BTime {
     this.sec = dataView.getInt8(offset+6);
     // byte 7 unused, alignment
     this.tenthMilli = dataView.getInt16(offset+8, byteSwap);
-  };
+  }
   toString() {
     return this.year+"-"+this.jday+" "+this.hour+":"+this.min+":"+this.sec+"."+this.tenthMilli+" "+this.getDate().toISOString();
-  };
+  }
 
   toDate() {
     return new Date(Date.UTC(this.year, 0, this.jday, this.hour, this.min, this.sec, this.tenthMilli/10));
-  };
+  }
 }
 
 
@@ -172,7 +171,7 @@ export function areContiguous(dr1, dr2) {
     let h2 = dr2.header;
     return h1.end.getTime() < h2.start.getTime() 
         && h1.end.getTime() + 1000*1.5/h1.sampleRate > h2.start.getTime();
-};
+}
 
 /**
  * Merges data records into a arrary of float arrays. Each float array has
@@ -193,7 +192,7 @@ export function merge(drList) {
     current.start = first.header.start;
     current.timeOfSample = function(i) {
       return new Date(this.start.getTime() + 1000*i/this.sampleRate);
-    }
+    };
     current.end = current.timeOfSample(current.length-1);
     current.netCode = first.header.netCode;
     current.staCode = first.header.staCode;
@@ -205,7 +204,7 @@ export function merge(drList) {
     current.seisId = function() {
       return (this.codes()+"_"+this.start.toISOString()+"_"+this.end.toISOString()).replace(/\./g,'_').replace(/\:/g,'');
     };
-  }
+  };
   for (let i=0; i<drList.length; i++) {
     currDR = drList[i];
     if (! current || ! areContiguous(prevDR, drList[i])) {
@@ -240,7 +239,7 @@ export function byChannel(drList) {
       out[key] = [currDR]; 
     } else {
       out[key].push(currDR);
-    };
+    }
   }
   return out;
 }
