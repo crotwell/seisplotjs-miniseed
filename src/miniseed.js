@@ -224,7 +224,7 @@ export function merge(drList) {
     assignMetaData(firstDR, current);
     out.push(current);
   }
-  for (i=0; i<out.length; i++) {
+  for (let i=0; i<out.length; i++) {
     current = out[i];
   }
   return out;
