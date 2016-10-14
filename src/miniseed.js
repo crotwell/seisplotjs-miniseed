@@ -59,11 +59,11 @@ export class DataHeader {
     this.numSamples = dataView.getInt16(30, headerByteSwap);
     this.sampRateFac = dataView.getInt16(32, headerByteSwap);
     this.sampRateMul = dataView.getInt16(34, headerByteSwap);
-    //activityFlags = dataView.getUint8(36)
-    //ioClockFlags = dataView.getUint8(37)
-    //dataQualityFlags = dataView.getUint8(38)
-    this.numBlockettes = dataView.getUint8(39)
-    //timeCorrection = dataView.getInt32(40, headerByteSwap)
+    this.activityFlags = dataView.getUint8(36);
+    this.ioClockFlags = dataView.getUint8(37);
+    this.dataQualityFlags = dataView.getUint8(38);
+    this.numBlockettes = dataView.getUint8(39);
+    this.timeCorrection = dataView.getInt32(40, headerByteSwap);
     this.dataOffset = dataView.getUint16(44, headerByteSwap);
     this.blocketteOffset = dataView.getUint16(46, headerByteSwap);
     let offset = this.blocketteOffset;
@@ -167,7 +167,7 @@ function checkByteSwap(bTime) {
   return bTime.year < 1960 || bTime.year > 2055;
 }
 
-export areContiguous = function(dr1, dr2) {
+export function areContiguous(dr1, dr2) {
     let h1 = dr1.header;
     let h2 = dr2.header;
     return h1.end.getTime() < h2.start.getTime() 
