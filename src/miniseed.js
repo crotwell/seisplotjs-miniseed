@@ -1,3 +1,4 @@
+/*global DataView*/
 /**
  * Philip Crotwell
  * University of South Carolina, 2014
@@ -42,7 +43,6 @@ export class DataRecord {
 export class DataHeader {
 
   constructor(dataView) {
-    let debugDR = "";
     this.seq = makeString(dataView, 0, 6);
     this.typeCode = dataView.getUint8(6);
     this.continuationCode = dataView.getUint8(7);
