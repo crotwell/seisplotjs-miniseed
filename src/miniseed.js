@@ -7,6 +7,7 @@
 
 import * as seedcodec from 'seisplotjs-seedcodec';
 
+/** parse arrayBuffer into an array of DataRecords. */
 export function parseDataRecords(arrayBuffer) {
   let dataRecords = [];
   let offset = 0;
@@ -19,7 +20,9 @@ export function parseDataRecords(arrayBuffer) {
   return dataRecords;
 }
 
-
+/** Represents a SEED Data Record, with header, blockettes and data. 
+  * Currently only blockette 1000 is parsed, others are separated, 
+  * but left as just a DataView. */
 export class DataRecord {
   constructor(dataView) {
     this.header = new DataHeader(dataView);
@@ -28,11 +31,15 @@ export class DataRecord {
     this.data = new DataView(dataView.buffer, 
                              dataView.byteOffset+this.header.dataOffset,
                              this.header.recordSize-this.header.dataOffset);
+    this.decompData = undefined;
     }
   decompress() {
-    let decompData = seedcodec.decompress(this.header.encoding, this.data, this.header.numSamples, this.header.littleEndian);
-    decompData.header = this.header;
-    return decompData;
+    // only decompress once as it is expensive operation
+    if ( typeof this.decompData === 'undefined') {
+      this.decompData = seedcodec.decompress(this.header.encoding, this.data, this.header.numSamples, this.header.littleEndian);
+      this.decompData.header = this.header;
+    }
+    return this.decompData;
   }
 
   codes() {
@@ -229,6 +236,8 @@ export function merge(drList) {
   return out;
 }
 
+/** splits a list of data records by channel code, returning an object
+  * with each NSLC mapped to an array of data records. */
 export function byChannel(drList) {
   let out = {};
   let key;
