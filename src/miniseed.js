@@ -7,6 +7,9 @@
 
 import * as seedcodec from 'seisplotjs-seedcodec';
 
+/* re-export */
+export { seedcodec };
+
 /** parse arrayBuffer into an array of DataRecords. */
 export function parseDataRecords(arrayBuffer) {
   let dataRecords = [];
