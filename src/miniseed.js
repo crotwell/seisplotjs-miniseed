@@ -183,60 +183,91 @@ export function areContiguous(dr1, dr2) {
         && h1.end.getTime() + 1000*1.5/h1.sampleRate > h2.start.getTime();
 }
 
+/** concatentates a sequence of DataRecords into a single seismogram object.
+  * Assumes that they are all contiguous and in order. Header values from the first
+  * DataRecord are used. */
+export function createSeismogram(contig) {
+    let out = {
+      sampleRate: contig[0].header.sampleRate,
+      start: contig[0].header.start,
+      timeOfSample: function(i) {
+        return new Date(this.start.getTime() + 1000*i/this.sampleRate);
+      },
+      end: null,
+      netCode: contig[0].header.netCode,
+      staCode: contig[0].header.staCode,
+      locCode: contig[0].header.locCode,
+      chanCode: contig[0].header.chanCode,
+      codes: function()  {
+        return this.netCode+"."+this.staCode+"."+this.locCode+"."+this.chanCode;
+      },
+      seisId: function() {
+        return (this.codes()+"_"+this.start.toISOString()+"_"+this.end.toISOString()).replace(/\./g,'_').replace(/\:/g,'');
+      },
+      y: contig[0].decompress()
+    };
+    for (let i=1; i<contig.length; i++) {
+      out.y = out.y.concat(contig[i].decompress());
+    }
+    out.end = out.timeOfSample(out.y.length-1);
+    return out;
+  }
+
+
 /**
- * Merges data records into a arrary of float arrays. Each float array has
+ * Merges data records into a arrary of seismogram segment objects 
+ * containing the data as a float array, y. Each seismogram has
  * sampleRate, start, end, netCode, staCode, locCode, chanCode as well 
  * as the function timeOfSample(integer) set.
  * This assumes all data records are from the same channel.
  */
 export function merge(drList) {
   let out = [];
-  let prevDR, currDR;
-  let current;
+  let currDR;
   drList.sort(function(a,b) {
       return a.header.start.getTime() - b.header.start.getTime();
   });
-  let firstDR = drList[0];
-  let assignMetaData = function(first, current) {
-    current.sampleRate = first.header.sampleRate;
-    current.start = first.header.start;
-    current.timeOfSample = function(i) {
-      return new Date(this.start.getTime() + 1000*i/this.sampleRate);
-    };
-    current.end = current.timeOfSample(current.length-1);
-    current.netCode = first.header.netCode;
-    current.staCode = first.header.staCode;
-    current.locCode = first.header.locCode;
-    current.chanCode = first.header.chanCode;
-    current.codes = function()  {
-      return this.netCode+"."+this.staCode+"."+this.locCode+"."+this.chanCode;
-    };
-    current.seisId = function() {
-      return (this.codes()+"_"+this.start.toISOString()+"_"+this.end.toISOString()).replace(/\./g,'_').replace(/\:/g,'');
-    };
-  };
+  let contig = [];
   for (let i=0; i<drList.length; i++) {
     currDR = drList[i];
-    if (! current || ! areContiguous(prevDR, drList[i])) {
-      if (current) {
-        assignMetaData(firstDR, current);
-        out.push(current);
-      }
-      firstDR = currDR;
-      current = currDR.decompress();
+    if ( contig.length == 0 ) {
+      contig.push(currDR);
+    } else if (areContiguous(contig[contig.length-1], currDR)) {
+      contig.push(currDR);
     } else {
-      current = current.concat(currDR.decompress());
+      //found a gap
+      out.push(createSeismogram(contig));
+      contig = [ currDR ];
     }
-    prevDR = currDR;
   }
-  if (current) {
-    assignMetaData(firstDR, current);
-    out.push(current);
-  }
-  for (let i=0; i<out.length; i++) {
-    current = out[i];
+  if (contig.length > 0) {
+      // last segment
+      out.push(createSeismogram(contig));
+      contig = [];
   }
   return out;
+}
+
+
+export function segmentMinMax(segment, minMaxAccumulator) {
+if ( ! segment.y) {
+throw new Error("Segment does not have a y field, doesn't look like a seismogram segment. "+Array.isArray(segment)+" "+segment);
+}
+  let minAmp = Number.MAX_SAFE_INTEGER;
+  let maxAmp = -1 * (minAmp);
+  if ( minMaxAccumulator) {
+    minAmp = minMaxAccumulator[0];
+    maxAmp = minMaxAccumulator[1];
+  }
+  for (let n = 0; n < segment.y.length; n++) {
+    if (minAmp > segment.y[n]) {
+      minAmp = segment.y[n];
+    }
+    if (maxAmp < segment.y[n]) {
+      maxAmp = segment.y[n];
+    }
+  }
+  return [ minAmp, maxAmp ];
 }
 
 /** splits a list of data records by channel code, returning an object
