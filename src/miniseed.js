@@ -219,7 +219,8 @@ export function createSeismogram(contig) {
  * containing the data as a float array, y. Each seismogram has
  * sampleRate, start, end, netCode, staCode, locCode, chanCode as well 
  * as the function timeOfSample(integer) set.
- * This assumes all data records are from the same channel.
+ * This assumes all data records are from the same channel, byChannel
+ * can be used first if multiple channels may be present.
  */
 export function merge(drList) {
   let out = [];
