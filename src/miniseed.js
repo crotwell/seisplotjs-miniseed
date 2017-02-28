@@ -6,9 +6,10 @@
  */
 
 import * as seedcodec from 'seisplotjs-seedcodec';
+import * as model from 'seisplotjs-model';
 
 /* re-export */
-export { seedcodec };
+export { seedcodec, model };
 
 /** parse arrayBuffer into an array of DataRecords. */
 export function parseDataRecords(arrayBuffer) {
@@ -187,31 +188,20 @@ export function areContiguous(dr1, dr2) {
   * Assumes that they are all contiguous and in order. Header values from the first
   * DataRecord are used. */
 export function createSeismogram(contig) {
-    let out = {
-      sampleRate: contig[0].header.sampleRate,
-      start: contig[0].header.start,
-      timeOfSample: function(i) {
-        return new Date(this.start.getTime() + 1000*i/this.sampleRate);
-      },
-      end: null,
-      netCode: contig[0].header.netCode,
-      staCode: contig[0].header.staCode,
-      locCode: contig[0].header.locCode,
-      chanCode: contig[0].header.chanCode,
-      codes: function()  {
-        return this.netCode+"."+this.staCode+"."+this.locCode+"."+this.chanCode;
-      },
-      seisId: function() {
-        return (this.codes()+"_"+this.start.toISOString()+"_"+this.end.toISOString()).replace(/\./g,'_').replace(/\:/g,'');
-      },
-      y: contig[0].decompress()
-    };
-    for (let i=1; i<contig.length; i++) {
-      out.y = out.y.concat(contig[i].decompress());
-    }
-    out.end = out.timeOfSample(out.y.length-1);
-    return out;
+  let y = [];
+  for (let i=1; i<contig.length; i++) {
+    y = y.concat(contig[i].decompress());
   }
+  let out = new model.Seismogram(y,
+                                 contig[0].header.sampleRate,
+                                 contig[0].header.start);
+  out.netCode(contig[0].header.netCode)
+    .staCode(contig[0].header.staCode)
+    .locId(contig[0].header.locCode)
+    .chanCode(contig[0].header.chanCode);
+
+  return out;
+}
 
 
 /**
@@ -251,7 +241,7 @@ export function merge(drList) {
 
 
 export function segmentMinMax(segment, minMaxAccumulator) {
-if ( ! segment.y) {
+if ( ! segment.y()) {
 throw new Error("Segment does not have a y field, doesn't look like a seismogram segment. "+Array.isArray(segment)+" "+segment);
 }
   let minAmp = Number.MAX_SAFE_INTEGER;
@@ -260,12 +250,12 @@ throw new Error("Segment does not have a y field, doesn't look like a seismogram
     minAmp = minMaxAccumulator[0];
     maxAmp = minMaxAccumulator[1];
   }
-  for (let n = 0; n < segment.y.length; n++) {
-    if (minAmp > segment.y[n]) {
-      minAmp = segment.y[n];
+  for (let n = 0; n < segment.y().length; n++) {
+    if (minAmp > segment.y()[n]) {
+      minAmp = segment.y()[n];
     }
-    if (maxAmp < segment.y[n]) {
-      maxAmp = segment.y[n];
+    if (maxAmp < segment.y()[n]) {
+      maxAmp = segment.y()[n];
     }
   }
   return [ minAmp, maxAmp ];
