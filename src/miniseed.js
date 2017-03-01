@@ -132,8 +132,6 @@ export class DataHeader {
 export class Blockette {
   constructor(dataView, offset, length, headerByteSwap) {
     this.type = dataView.getUint16(offset, headerByteSwap);
-    //console.error("blockette "+offset+" "+length+" "+this.type);
-    // nextOffset = dataView.getUint16(offset+2, headerByteSwap)
     this.body = new DataView(dataView.buffer, dataView.byteOffset+offset, length);
     if (this.type == 1000) {
       this.encoding = this.body.getUint8(4);
@@ -189,7 +187,7 @@ export function areContiguous(dr1, dr2) {
   * DataRecord are used. */
 export function createSeismogram(contig) {
   let y = [];
-  for (let i=1; i<contig.length; i++) {
+  for (let i=0; i<contig.length; i++) {
     y = y.concat(contig[i].decompress());
   }
   let out = new model.Seismogram(y,
