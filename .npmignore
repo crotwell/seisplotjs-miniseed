@@ -1,2 +1,3 @@
 src/
-.eslintrc.js
+seisplotjs_*_standalone.js
+example/**/seisplotjs_*_standalone.js
