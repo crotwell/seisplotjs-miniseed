@@ -144,7 +144,10 @@ export class Blockette {
 function makeString(dataView, offset, length) {
   let out = "";
   for (let i=offset; i<offset+length; i++) {
-    out += String.fromCharCode(dataView.getUint8(i));
+    let charCode = dataView.getUint8(i);
+    if (charCode > 31) {
+      out += String.fromCharCode(charCode);
+    }
   }
   return out.trim();
 }
