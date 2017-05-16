@@ -5,7 +5,7 @@
   "main": "./lib/miniseed.js",
   "dependencies": {
     "seisplotjs-seedcodec": ">= 1.0.0",
-    "seisplotjs-model": ">= 0.0.1"
+    "seisplotjs-model": ">= 1.0.0"
   },
   "scripts": {
     "lint": "eslint 'src/*.js'",
