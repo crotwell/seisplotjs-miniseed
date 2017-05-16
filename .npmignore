@@ -1,4 +1,5 @@
 src/
+.git
 .DS_Store
 seisplotjs_*_standalone.js
 example/**/seisplotjs_*_standalone.js
