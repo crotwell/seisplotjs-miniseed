@@ -24,15 +24,15 @@ export function parseDataRecords(arrayBuffer) {
   return dataRecords;
 }
 
-/** Represents a SEED Data Record, with header, blockettes and data. 
-  * Currently only blockette 1000 is parsed, others are separated, 
+/** Represents a SEED Data Record, with header, blockettes and data.
+  * Currently only blockette 1000 is parsed, others are separated,
   * but left as just a DataView. */
 export class DataRecord {
   constructor(dataView) {
     this.header = new DataHeader(dataView);
     this.length = this.header.numSamples;
-  
-    this.data = new DataView(dataView.buffer, 
+
+    this.data = new DataView(dataView.buffer,
                              dataView.byteOffset+this.header.dataOffset,
                              this.header.recordSize-this.header.dataOffset);
     this.decompData = undefined;
@@ -117,7 +117,7 @@ export class DataHeader {
     let sampleRate = 10000.0; // default (impossible) value;
     if((factor * multiplier) != 0.0) { // in the case of log records
         sampleRate = Math.pow(Math.abs(factor),
-                              (factor / Math.abs(factor))) 
+                              (factor / Math.abs(factor)))
                      * Math.pow(Math.abs(multiplier),
                               (multiplier / Math.abs(multiplier)));
     }
@@ -136,7 +136,7 @@ export class Blockette {
     if (this.type == 1000) {
       this.encoding = this.body.getUint8(4);
       this.dataRecordLengthByte = this.body.getUint8(6);
-      this.wordOrder = this.body.getUint8(5); 
+      this.wordOrder = this.body.getUint8(5);
     }
   }
 }
@@ -181,7 +181,7 @@ function checkByteSwap(bTime) {
 export function areContiguous(dr1, dr2) {
     let h1 = dr1.header;
     let h2 = dr2.header;
-    return h1.end.getTime() < h2.start.getTime() 
+    return h1.end.getTime() < h2.start.getTime()
         && h1.end.getTime() + 1000*1.5/h1.sampleRate > h2.start.getTime();
 }
 
@@ -206,9 +206,9 @@ export function createSeismogram(contig) {
 
 
 /**
- * Merges data records into a arrary of seismogram segment objects 
+ * Merges data records into a arrary of seismogram segment objects
  * containing the data as a float array, y. Each seismogram has
- * sampleRate, start, end, netCode, staCode, locCode, chanCode as well 
+ * sampleRate, start, end, netCode, staCode, locCode, chanCode as well
  * as the function timeOfSample(integer) set.
  * This assumes all data records are from the same channel, byChannel
  * can be used first if multiple channels may be present.
@@ -262,20 +262,19 @@ throw new Error("Segment does not have a y field, doesn't look like a seismogram
   return [ minAmp, maxAmp ];
 }
 
-/** splits a list of data records by channel code, returning an object
-  * with each NSLC mapped to an array of data records. */
+/** splits a list of data records by channel code, returning a Map
+  * with each NSLC string mapped to an array of data records. */
 export function byChannel(drList) {
-  let out = {};
+  let out = new Map();
   let key;
   for (let i=0; i<drList.length; i++) {
     let currDR = drList[i];
     key = currDR.codes();
-    if (! out[key]) {
-      out[key] = [currDR]; 
+    if (! out.has(key)) {
+      out.set(key, [ currDR ]);
     } else {
-      out[key].push(currDR);
+      out.get(key).push(currDR);
     }
   }
   return out;
 }
-
