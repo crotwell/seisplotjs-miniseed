@@ -11,7 +11,7 @@
     "lint": "eslint 'src/*.js'",
     "test": "qunit -c ./lib/miniseed.js -t ./test/index.js",
     "compile": "babel --presets es2015 -d lib/ src/",
-    "standalone": "browserify src/miniseed.js --standalone seisplotjs_miniseed -o seisplotjs_miniseed_11s_standalone.js -t [ babelify --presets [ es2015 ] ]",
+    "standalone": "browserify src/miniseed.js --standalone seisplotjs_miniseed -o seisplotjs_miniseed_${npm_package_version}_standalone.js -t [ babelify --presets [ es2015 ] ]",
     "prepare": "npm run compile"
   },
   "repository": {
