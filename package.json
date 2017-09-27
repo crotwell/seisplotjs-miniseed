@@ -1,6 +1,6 @@
 {
   "name": "seisplotjs-miniseed",
-  "version": "1.1.1-SNAPSHOT",
+  "version": "1.2.0-SNAPSHOT",
   "description": "Javascript library for parsing seismic data in miniseed format.",
   "main": "./lib/miniseed.js",
   "dependencies": {
@@ -12,7 +12,7 @@
     "test": "qunit -c ./lib/miniseed.js -t ./test/index.js",
     "compile": "babel --presets es2015 -d lib/ src/",
     "standalone": "browserify src/miniseed.js --standalone seisplotjs_miniseed -o seisplotjs_miniseed_11s_standalone.js -t [ babelify --presets [ es2015 ] ]",
-    "prepublish": "npm run compile"
+    "prepare": "npm run compile"
   },
   "repository": {
     "type": "git",
