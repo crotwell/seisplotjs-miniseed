@@ -242,9 +242,9 @@ export function merge(drList) {
 
 
 export function segmentMinMax(segment, minMaxAccumulator) {
-if ( ! segment.y()) {
-throw new Error("Segment does not have a y field, doesn't look like a seismogram segment. "+Array.isArray(segment)+" "+segment);
-}
+  if ( ! segment.y()) {
+    throw new Error("Segment does not have a y field, doesn't look like a seismogram segment. "+Array.isArray(segment)+" "+segment);
+  }
   let minAmp = Number.MAX_SAFE_INTEGER;
   let maxAmp = -1 * (minAmp);
   if ( minMaxAccumulator) {
