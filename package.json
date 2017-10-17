@@ -1,10 +1,10 @@
 {
   "name": "seisplotjs-miniseed",
-  "version": "1.2.0-alpha.1",
+  "version": "1.2.0-alpha.2",
   "description": "Javascript library for parsing seismic data in miniseed format.",
   "main": "./lib/miniseed.js",
   "dependencies": {
-    "seisplotjs-model": "^1.0.1",
+    "seisplotjs-model": "^1.0.2-alpha.2",
     "seisplotjs-seedcodec": "^1.0.1"
   },
   "scripts": {
