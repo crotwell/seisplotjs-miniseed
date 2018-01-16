@@ -1,8 +1,6 @@
 
 // this comes from the seisplotjs miniseed bundle
 var miniseed = seisplotjs_miniseed;
-// this comes from the seisplotjs waveformplot bundle
-var wp = seisplotjs_waveformplot
 
 
 var client = new XMLHttpRequest();
