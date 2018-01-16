@@ -86,42 +86,9 @@ var table = wp.d3.select("div.miniseed")
         .text(function(d) {
           return d.header.sampleRate;
         });
-      plotSeis(records);
 }
 
 var reject = function(error) {
   wp.d3.select("div.miniseed").append('p').html("Error loading data." +error);
   console.assert(false, error);
 }
-
-var plotSeis = function (dataRecords) {
-          var div = wp.d3.select("div.miniseed");
-          div.selectAll('div.myseisplot').remove();
-          var byChannel = wp.miniseed.byChannel(dataRecords);
-          var keys = Object.keys(byChannel);
-          for (var i = 0; i < keys.length; i++) {
-            var key = keys[i];
-            var segments = miniseed.merge(byChannel[key]);
-console.log("merge in:"+byChannel[key].length+" out:"+segments.length);
-            div.append('p').html('Plot for ' + key);
-div.append('div').attr("class", "seis").selectAll('p').data(segments).enter().append('p').text(function(d) { return d.start().toISOString()+" to "+d.end().toISOString()+" nums:"+d.numPoints()+" "+d.sampleRate();});
-            var svgdiv = div.append('div').attr('class', 'myseisplot');
-            if (segments.length > 0) {
-var startEnd = wp.findStartEnd(segments);
-console.log("wp start end "+startEnd.start.toISOString()+" to "+startEnd.end.toISOString());
-                //var seismogram = new wp.chart(svgdiv, segments, null, null);
-                var seismogram = new wp.chart(svgdiv, segments, null, null);
-                seismogram.draw();
-var markers = [];
-markers.push({ markertype: 'pick', name: 'P', time: new Date(Date.parse('2017-03-01T20:19:05.250Z'))});
-//markers.push({ markertype: 'pick', name: 'S', time: new Date(Date.parse('2017-02-27T22:59:20Z'))});
-seismogram.appendMarkers(markers);
-console.log("P marker "+markers[0].time.toISOString());
-console.log("xScale domain "+seismogram.xScale.domain()[0].toISOString()+" to "+seismogram.xScale.domain()[1].toISOString());
-            }
-        }
-        if (keys.length==0){
-            divs.append('p').html('No data found');
-        }
-      }
-
