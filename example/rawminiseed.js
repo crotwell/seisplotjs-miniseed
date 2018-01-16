@@ -6,7 +6,7 @@ var miniseed = seisplotjs_miniseed;
 var client = new XMLHttpRequest();
 var url = 'http://service.scedc.caltech.edu/fdsnws/dataselect/1/query?net=CI&sta=BBR&loc=--&cha=BHZ&start=2017-03-01T20:17:04&end=2017-03-01T20:22:04';
 
-var div = wp.d3.select('div.miniseed');
+var div = d3.select('div.miniseed');
 div.append('p').text(url);
 
 client.open("GET", url);
@@ -26,10 +26,10 @@ console.log("resolve miniseed: ");
 
 var resolve = function(arraybuf) {
   var records = miniseed.parseDataRecords(arraybuf);
-var table = wp.d3.select("div.miniseed")
+var table = d3.select("div.miniseed")
         .select("table");
       if ( table.empty()) {
-        table = wp.d3.select("div.miniseed")
+        table = d3.select("div.miniseed")
           .append("table");
         var th = table.append("thead").append("tr");
         th.append("th").text("Seq");
@@ -87,6 +87,6 @@ var table = wp.d3.select("div.miniseed")
 }
 
 var reject = function(error) {
-  wp.d3.select("div.miniseed").append('p').html("Error loading data." +error);
+  d3.select("div.miniseed").append('p').html("Error loading data." +error);
   console.assert(false, error);
 }
