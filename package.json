@@ -1,17 +1,17 @@
 {
   "name": "seisplotjs-miniseed",
-  "version": "1.2.0",
+  "version": "1.2.1-alpha.1",
   "description": "Javascript library for parsing seismic data in miniseed format.",
   "main": "./lib/miniseed.js",
   "dependencies": {
-    "seisplotjs-model": "^1.1.0",
+    "seisplotjs-model": "^1.2.0-alpha.1",
     "seisplotjs-seedcodec": "^1.0.2"
   },
   "scripts": {
     "lint": "eslint 'src/*.js'",
     "test": "qunit -c ./lib/miniseed.js -t ./test/index.js",
-    "compile": "babel --presets es2015 -d lib/ src/",
-    "standalone": "browserify src/miniseed.js --standalone seisplotjs_miniseed -o seisplotjs_miniseed_${npm_package_version}_standalone.js -t [ babelify --presets [ es2015 ] ]",
+    "compile": "babel --presets env -d lib/ src/",
+    "standalone": "browserify src/miniseed.js --standalone seisplotjs_miniseed -o seisplotjs_miniseed_${npm_package_version}_standalone.js -t [ babelify --presets [ env ] ]",
     "prepare": "npm run compile"
   },
   "repository": {
@@ -32,7 +32,7 @@
   "homepage": "https://github.com/crotwell/seisplotjs-miniseed",
   "devDependencies": {
     "babel-cli": "^6.24.1",
-    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-env": "^1.6.1",
     "babelify": "^8.0.0",
     "eslint": "^4.15.0",
     "eslint-config-standard": "^10.2.1",
@@ -41,5 +41,10 @@
     "eslint-plugin-promise": "^3.5.0",
     "eslint-plugin-standard": "^3.0.1",
     "qunit": "^1.0.0"
+  },
+  "babel": {
+    "presets": [
+      "env"
+    ]
   }
 }
