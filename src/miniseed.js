@@ -12,7 +12,6 @@ import {hasArgs, hasNoArgs, isStringArg, isNumArg, checkStringOrDate, stringify}
 
 import * as seedcodec from 'seisplotjs-seedcodec';
 import * as model from 'seisplotjs-model';
-const moment = model.moment;
 
 /* re-export */
 export { seedcodec, model };
@@ -85,8 +84,8 @@ export class DataHeader {
   blocketteOffset: number;
   recordSize: number;
   blocketteList: Array<Blockette>;
-  start: moment;
-  end: moment;
+  start: model.moment;
+  end: model.moment;
   constructor(dataView: DataView) {
     this.seq = makeString(dataView, 0, 6);
     this.typeCode = dataView.getUint8(6);
@@ -135,7 +134,7 @@ export class DataHeader {
       }
     }
     this.sampleRate = this.calcSampleRate();
-    this.start = this.startBTime.toDate();
+    this.start = this.startBTime.toMoment();
     this.end = this.timeOfSample(this.numSamples-1);
   }
 
@@ -156,8 +155,8 @@ export class DataHeader {
     return sampleRate;
   }
 
-  timeOfSample(i: number): moment {
-    return moment.utc(this.start.getTime()).add(1000*i/this.sampleRate, 'second');
+  timeOfSample(i: number): model.moment {
+    return model.moment.utc(this.start.valueOf()).add(1000*i/this.sampleRate, 'second');
   }
 }
 
@@ -218,11 +217,15 @@ export class BTime {
     this.tenthMilli = dataView.getInt16(offset+8, byteSwap);
   }
   toString(): string {
-    return this.year+"-"+this.jday+" "+this.hour+":"+this.min+":"+this.sec+"."+this.tenthMilli+" "+this.toDate().toISOString();
+    return this.year+"-"+this.jday+" "+this.hour+":"+this.min+":"+this.sec+"."+this.tenthMilli.toFixed().padStart(4,'0')+" "+this.toMoment().toISOString();
   }
-
-  toDate(): moment {
-    return new moment.utc(this.year, 0, this.jday, this.hour, this.min, this.sec, this.tenthMilli/10);
+  toMoment(): model.moment {
+    let m = new model.moment.utc([this.year, 0, 1, this.hour, this.min, this.sec, Math.round(this.tenthMilli/10)]);
+    m.dayOfYear(this.jday);
+    return m;
+  }
+  toDate(): Date {
+    return new Date(this.year, 0, this.jday, this.hour, this.min, this.sec, this.tenthMilli/10);
   }
 }
 
@@ -234,8 +237,8 @@ function checkByteSwap(bTime): boolean {
 export function areContiguous(dr1: DataRecord, dr2: DataRecord) {
     let h1 = dr1.header;
     let h2 = dr2.header;
-    return h1.end.getTime() < h2.start.getTime()
-        && h1.end.getTime() + 1000*1.5/h1.sampleRate > h2.start.getTime();
+    return h1.end.valueOf() < h2.start.valueOf()
+        && h1.end.valueOf() + 1000*1.5/h1.sampleRate > h2.start.valueOf();
 }
 
 /** concatentates a sequence of DataRecords into a single seismogram object.
@@ -270,7 +273,7 @@ export function merge(drList: Array<DataRecord>): Array<model.Seismogram> {
   let out = [];
   let currDR;
   drList.sort(function(a,b) {
-      return a.header.start.getTime() - b.header.start.getTime();
+      return a.header.start.diff(b.header.start);
   });
   let contig = [];
   for (let i=0; i<drList.length; i++) {
@@ -304,7 +307,7 @@ export function segmentMinMax(segment: model.Seismogram, minMaxAccumulator:? Arr
     minAmp = minMaxAccumulator[0];
     maxAmp = minMaxAccumulator[1];
   }
-  let yData: Array<number> = segment.y();
+  let yData = ((segment.y() :any) :Array<number>); // for flow
   for (let n = 0; n < yData.length; n++) {
     if (minAmp > yData[n]) {
       minAmp = yData[n];
