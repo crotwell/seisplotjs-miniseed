@@ -10,6 +10,7 @@
   "scripts": {
     "lint": "eslint 'src/*.js'",
     "test": "jest",
+    "doc": "documentation build src/miniseed.js --github -o docs -f html --document-exported ",
     "flow": "flow",
     "flow-copy": "flow-copy-source -v -i '**/__tests__/**' src lib",
     "build:clean": "rimraf lib",

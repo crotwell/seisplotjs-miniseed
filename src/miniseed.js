@@ -10,11 +10,15 @@
 // special due to flow
 import {hasArgs, hasNoArgs, isStringArg, isNumArg, checkStringOrDate, stringify} from 'seisplotjs-model';
 
+
 import * as seedcodec from 'seisplotjs-seedcodec';
 import * as model from 'seisplotjs-model';
 
 /* re-export */
-export { seedcodec, model };
+export {
+  seedcodec,
+  model
+};
 
 /** parse arrayBuffer into an array of DataRecords. */
 export function parseDataRecords(arrayBuffer: ArrayBuffer) {
@@ -46,6 +50,10 @@ export class DataRecord {
                              this.header.recordSize-this.header.dataOffset);
     this.decompData = undefined;
     }
+    /** Decompresses the data into the decompData field, if the compression
+     *  type is known. This only needs to be called once and the result will
+     *  be cached.
+     */
   decompress() {
     // only decompress once as it is expensive operation
     if ( typeof this.decompData === 'undefined') {
@@ -55,11 +63,16 @@ export class DataRecord {
     return this.decompData;
   }
 
+  /** Concatenates the net, station, loc and channel codes, separated by periods.
+  */
   codes() {
     return this.header.netCode+"."+this.header.staCode+"."+this.header.locCode+"."+this.header.chanCode;
   }
 }
 
+/** Represents the header part of the DataRecord, including all the actual
+ *  fixed header plus fields pulled from a blockette 1000 if present.
+ */
 export class DataHeader {
   seq: string;
   typeCode: number;
@@ -142,6 +155,8 @@ export class DataHeader {
     return this.netCode+"."+this.staCode+"."+this.locCode+"."+this.chanCode+" "+this.start.toISOString()+" "+this.encoding;
   }
 
+  /** Calculates the sample rate in hertz from the sampRateFac and sampRateMul
+  parameters. This.sampleRate value is set to this value at construction. */
   calcSampleRate() :number {
     let factor = this.sampRateFac;
     let multiplier = this.sampRateMul;
@@ -155,6 +170,8 @@ export class DataHeader {
     return sampleRate;
   }
 
+  /** Calculates the time of the i-th sample in the record.
+  */
   timeOfSample(i: number): model.moment {
     return model.moment.utc(this.start.valueOf()).add(1000*i/this.sampleRate, 'second');
   }
@@ -234,6 +251,10 @@ function checkByteSwap(bTime): boolean {
   return bTime.year < 1960 || bTime.year > 2055;
 }
 
+/** Determines if two DataRecords are contiguous, ie if the second starts
+  * after the end of the first and the start time of the second is within
+  * 1.5 times the sample period of the end of the first.
+  */
 export function areContiguous(dr1: DataRecord, dr2: DataRecord) {
     let h1 = dr1.header;
     let h2 = dr2.header;
@@ -241,7 +262,7 @@ export function areContiguous(dr1: DataRecord, dr2: DataRecord) {
         && h1.end.valueOf() + 1000*1.5/h1.sampleRate > h2.start.valueOf();
 }
 
-/** concatentates a sequence of DataRecords into a single seismogram object.
+/** Concatentates a sequence of DataRecords into a single seismogram object.
   * Assumes that they are all contiguous and in order. Header values from the first
   * DataRecord are used. */
 export function createSeismogram(contig: Array<DataRecord>): model.Seismogram {
@@ -296,7 +317,8 @@ export function merge(drList: Array<DataRecord>): Array<model.Seismogram> {
   return out;
 }
 
-
+/** Finds the min and max values of a Seismogram, with an optional
+  * accumulator for use with gappy data. */
 export function segmentMinMax(segment: model.Seismogram, minMaxAccumulator:? Array<number>) :Array<number> {
   if ( ! segment.y()) {
     throw new Error("Segment does not have a y field, doesn't look like a seismogram segment. "+stringify(segment));
@@ -319,7 +341,7 @@ export function segmentMinMax(segment: model.Seismogram, minMaxAccumulator:? Arr
   return [ minAmp, maxAmp ];
 }
 
-/** splits a list of data records by channel code, returning a Map
+/** Splits a list of data records by channel code, returning a Map
   * with each NSLC string mapped to an array of data records. */
 export function byChannel(drList: Array<DataRecord>): Map<string, Array<DataRecord>> {
   let out = new Map();
