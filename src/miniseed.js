@@ -26,11 +26,73 @@ export function parseDataRecords(arrayBuffer: ArrayBuffer) {
   let offset = 0;
   while (offset < arrayBuffer.byteLength) {
     let dataView = new DataView(arrayBuffer, offset);
-    let dr = new DataRecord(dataView);
+    let dr = parseSingleDataRecord(dataView);
     dataRecords.push(dr);
     offset += dr.header.recordSize;
   }
   return dataRecords;
+}
+
+export function parseSingleDataRecord(dataView: DataView) {
+  let header = parseSingleDataRecordHeader(dataView);
+  let data = new DataView(dataView.buffer,
+                          dataView.byteOffset+header.dataOffset,
+                          header.recordSize-header.dataOffset);
+  return new DataRecord(header, data);
+}
+
+export function parseSingleDataRecordHeader(dataView: DataView) :DataHeader {
+  let out = new DataHeader();
+  out.seq = makeString(dataView, 0, 6);
+  out.typeCode = dataView.getUint8(6);
+  out.continuationCode = dataView.getUint8(7);
+  out.staCode = makeString(dataView, 8, 5);
+  out.locCode = makeString(dataView, 13, 2);
+  out.chanCode = makeString(dataView, 15, 3);
+  out.netCode = makeString(dataView, 18, 2);
+  out.startBTime = parseBTime(dataView, 20);
+  let headerByteSwap = checkByteSwap(out.startBTime);
+  if (headerByteSwap) {
+    out.startBTime = parseBTime(dataView, 20, headerByteSwap);
+  }
+  out.numSamples = dataView.getInt16(30, headerByteSwap);
+  out.sampRateFac = dataView.getInt16(32, headerByteSwap);
+  out.sampRateMul = dataView.getInt16(34, headerByteSwap);
+  out.activityFlags = dataView.getUint8(36);
+  out.ioClockFlags = dataView.getUint8(37);
+  out.dataQualityFlags = dataView.getUint8(38);
+  out.numBlockettes = dataView.getUint8(39);
+  out.timeCorrection = dataView.getInt32(40, headerByteSwap);
+  out.dataOffset = dataView.getUint16(44, headerByteSwap);
+  out.blocketteOffset = dataView.getUint16(46, headerByteSwap);
+  let offset = out.blocketteOffset;
+  out.blocketteList = [];
+  out.recordSize = 4096;
+  for (let i=0; i< out.numBlockettes; i++) {
+    let nextOffset = dataView.getUint16(offset+2, headerByteSwap);
+    if (nextOffset == 0) {
+      // last blockette
+      nextOffset = out.dataOffset;
+    }
+    if (nextOffset == 0) {
+      nextOffset = offset; // zero length, probably an error...
+    }
+    let blockette = new Blockette(dataView, offset, nextOffset-offset, headerByteSwap);
+    if (blockette.type === 1000) {
+      blockette = new Blockette1000(dataView, offset, nextOffset-offset, headerByteSwap);
+    }
+    out.blocketteList.push(blockette);
+    offset = nextOffset;
+    if (blockette instanceof Blockette1000) {
+      out.recordSize = 1 << blockette.dataRecordLengthByte;
+      out.encoding = blockette.encoding;
+      out.littleEndian = (blockette.wordOrder === 0);
+    }
+  }
+  out.sampleRate = out.calcSampleRate();
+  out.start = out.startBTime.toMoment();
+  out.end = out.timeOfSample(out.numSamples-1);
+  return out;
 }
 
 /** Represents a SEED Data Record, with header, blockettes and data.
@@ -38,18 +100,14 @@ export function parseDataRecords(arrayBuffer: ArrayBuffer) {
   * but left as just a DataView. */
 export class DataRecord {
   header: DataHeader;
-  length: number;
   data: DataView;
   decompData: Array<number> | void;
-  constructor(dataView: DataView) {
-    this.header = new DataHeader(dataView);
-  //  this.length = this.header.numSamples;
 
-    this.data = new DataView(dataView.buffer,
-                             dataView.byteOffset+this.header.dataOffset,
-                             this.header.recordSize-this.header.dataOffset);
+  constructor(header: DataHeader, data: DataView) {
+    this.header = header;
+    this.data = data;
     this.decompData = undefined;
-    }
+  }
     /** Decompresses the data into the decompData field, if the compression
      *  type is known. This only needs to be called once and the result will
      *  be cached.
@@ -99,56 +157,32 @@ export class DataHeader {
   blocketteList: Array<Blockette>;
   start: model.moment;
   end: model.moment;
-  constructor(dataView: DataView) {
-    this.seq = makeString(dataView, 0, 6);
-    this.typeCode = dataView.getUint8(6);
-    this.continuationCode = dataView.getUint8(7);
-    this.staCode = makeString(dataView, 8, 5);
-    this.locCode = makeString(dataView, 13, 2);
-    this.chanCode = makeString(dataView, 15, 3);
-    this.netCode = makeString(dataView, 18, 2);
-    this.startBTime = new BTime(dataView, 20);
-    let headerByteSwap = checkByteSwap(this.startBTime);
-    if (headerByteSwap) {
-      this.startBTime = new BTime(dataView, 20, headerByteSwap);
-    }
-    this.numSamples = dataView.getInt16(30, headerByteSwap);
-    this.sampRateFac = dataView.getInt16(32, headerByteSwap);
-    this.sampRateMul = dataView.getInt16(34, headerByteSwap);
-    this.activityFlags = dataView.getUint8(36);
-    this.ioClockFlags = dataView.getUint8(37);
-    this.dataQualityFlags = dataView.getUint8(38);
-    this.numBlockettes = dataView.getUint8(39);
-    this.timeCorrection = dataView.getInt32(40, headerByteSwap);
-    this.dataOffset = dataView.getUint16(44, headerByteSwap);
-    this.blocketteOffset = dataView.getUint16(46, headerByteSwap);
-    let offset = this.blocketteOffset;
+  constructor() {
+    this.seq = "      ";
+    this.typeCode = 68; // D
+    this.continuationCode = 32; // space
+    this.staCode = '';
+    this.locCode = '';
+    this.chanCode = '';
+    this.netCode = '';
+    this.startBTime = new BTime(1900, 1, 0, 0, 0, 0);
+    this.numSamples = 0;
+    this.sampRateFac = 0;
+    this.sampRateMul = 0;
+    this.activityFlags = 0;
+    this.ioClockFlags = 0;
+    this.dataQualityFlags = 0;
+    this.numBlockettes = 0;
+    this.timeCorrection = 0;
+    this.dataOffset = 0;
+    this.blocketteOffset = 0;
     this.blocketteList = [];
     this.recordSize = 4096;
-    for (let i=0; i< this.numBlockettes; i++) {
-      let nextOffset = dataView.getUint16(offset+2, headerByteSwap);
-      if (nextOffset == 0) {
-        // last blockette
-        nextOffset = this.dataOffset;
-      }
-      if (nextOffset == 0) {
-        nextOffset = offset; // zero length, probably an error...
-      }
-      let blockette = new Blockette(dataView, offset, nextOffset-offset, headerByteSwap);
-      if (blockette.type === 1000) {
-        blockette = new Blockette1000(dataView, offset, nextOffset-offset, headerByteSwap);
-      }
-      this.blocketteList.push(blockette);
-      offset = nextOffset;
-      if (blockette instanceof Blockette1000) {
-        this.recordSize = 1 << blockette.dataRecordLengthByte;
-        this.encoding = blockette.encoding;
-        this.littleEndian = (blockette.wordOrder === 0);
-      }
-    }
-    this.sampleRate = this.calcSampleRate();
+    this.encoding = 0;
+    this.littleEndian = false;
+    this.sampleRate = 0;
     this.start = this.startBTime.toMoment();
-    this.end = this.timeOfSample(this.numSamples-1);
+    this.end = model.moment.utc(this.start);
   }
 
   toString() {
@@ -170,10 +204,11 @@ export class DataHeader {
     return sampleRate;
   }
 
-  /** Calculates the time of the i-th sample in the record.
+  /** Calculates the time of the i-th sample in the record, zero based,
+   *  so timeOfSample(0) is the start and timeOfSample(this.numSamples-1) is end.
   */
   timeOfSample(i: number): model.moment {
-    return model.moment.utc(this.start.valueOf()).add(1000*i/this.sampleRate, 'second');
+    return model.moment.utc(this.start).add(i/this.sampleRate, 'second');
   }
 }
 
@@ -203,7 +238,7 @@ export class Blockette1000 extends Blockette {
   }
 }
 
-function makeString(dataView, offset, length) {
+function makeString(dataView :DataView, offset :number, length :number) :string {
   let out = "";
   for (let i=offset; i<offset+length; i++) {
     let charCode = dataView.getUint8(i);
@@ -214,6 +249,18 @@ function makeString(dataView, offset, length) {
   return out.trim();
 }
 
+export function parseBTime(dataView: DataView, offset:number, byteSwap:?boolean) :BTime {
+    if ( ! byteSwap ) { byteSwap = false; }
+    let year = dataView.getInt16(offset, byteSwap);
+    let jday = dataView.getInt16(offset+2, byteSwap);
+    let hour = dataView.getInt8(offset+4);
+    let min = dataView.getInt8(offset+5);
+    let sec = dataView.getInt8(offset+6);
+    // byte 7 unused, alignment
+    let tenthMilli = dataView.getInt16(offset+8, byteSwap);
+    return new BTime(year, jday, hour, min, sec, tenthMilli);
+}
+
 export class BTime {
   year: number;
   jday: number;
@@ -222,16 +269,14 @@ export class BTime {
   sec: number;
   tenthMilli: number;
   length: number;
-  constructor(dataView: DataView, offset:number, byteSwap:?boolean) {
-    if ( ! byteSwap ) { byteSwap = false; }
+  constructor(year :number, jday :number, hour :number, min :number, sec :number, tenthMilli :number) {
     this.length = 10;
-    this.year = dataView.getInt16(offset, byteSwap);
-    this.jday = dataView.getInt16(offset+2, byteSwap);
-    this.hour = dataView.getInt8(offset+4);
-    this.min = dataView.getInt8(offset+5);
-    this.sec = dataView.getInt8(offset+6);
-    // byte 7 unused, alignment
-    this.tenthMilli = dataView.getInt16(offset+8, byteSwap);
+    this.year = year;
+    this.jday = jday;
+    this.hour = hour;
+    this.min = min;
+    this.sec = sec;
+    this.tenthMilli = tenthMilli;
   }
   toString(): string {
     return this.year+"-"+this.jday+" "+this.hour+":"+this.min+":"+this.sec+"."+this.tenthMilli.toFixed().padStart(4,'0')+" "+this.toMoment().toISOString();
@@ -247,7 +292,7 @@ export class BTime {
 }
 
 
-function checkByteSwap(bTime): boolean {
+function checkByteSwap(bTime :BTime): boolean {
   return bTime.year < 1960 || bTime.year > 2055;
 }
 
@@ -258,7 +303,8 @@ function checkByteSwap(bTime): boolean {
 export function areContiguous(dr1: DataRecord, dr2: DataRecord) {
     let h1 = dr1.header;
     let h2 = dr2.header;
-    return h1.end.valueOf() < h2.start.valueOf()
+    console.log("areContiguous: "+h1.end.toISOString()+" "+h2.start.toISOString()+" "+(h1.end.isBefore(h2.start))+" "+(h1.end.valueOf() + 1000*1.5/h1.sampleRate > h2.start.valueOf()))
+    return h1.end.isBefore(h2.start)
         && h1.end.valueOf() + 1000*1.5/h1.sampleRate > h2.start.valueOf();
 }
 

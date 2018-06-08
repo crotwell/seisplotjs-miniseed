@@ -26,4 +26,18 @@ test("load miniseed file", () => {
     expect(dr.header.numSamples).toEqual(99);
     let decomp = parsed[0].decompress();
     expect(decomp).toBeDefined();
+    //let merged = miniseed.merge(parsed);
+    //expect(merged.length).toBe(1);
+});
+
+test("contiguous miniseed file", () => {
+    let mseedData = fs.readFileSync('test/CO_JSC.mseed');
+    expect(mseedData.length).toEqual(7168);
+    let parsed = miniseed.parseDataRecords(mseedData.buffer);
+    expect(parsed.length).toEqual(14);
+    let drFirst = parsed[0];
+    let drSecond = parsed[1];
+    console.log("drFirst: "+drFirst.header.start.toISOString()+" "+drFirst.header.numSamples+" "+drFirst.header.sampleRate);
+    console.log("drFirst.end="+drFirst.header.end.toISOString()+" drSecond.start="+drSecond.header.start.toISOString());
+    expect(miniseed.areContiguous(drFirst, drSecond)).toBe(true);
 });
