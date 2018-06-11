@@ -77,10 +77,7 @@ export function parseSingleDataRecordHeader(dataView: DataView) :DataHeader {
     if (nextOffset == 0) {
       nextOffset = offset; // zero length, probably an error...
     }
-    let blockette = new Blockette(dataView, offset, nextOffset-offset, headerByteSwap);
-    if (blockette.type === 1000) {
-      blockette = new Blockette1000(dataView, offset, nextOffset-offset, headerByteSwap);
-    }
+    let blockette = parseBlockette(dataView, offset, nextOffset-offset, headerByteSwap);
     out.blocketteList.push(blockette);
     offset = nextOffset;
     if (blockette instanceof Blockette1000) {
@@ -93,6 +90,20 @@ export function parseSingleDataRecordHeader(dataView: DataView) :DataHeader {
   out.start = out.startBTime.toMoment();
   out.end = out.timeOfSample(out.numSamples-1);
   return out;
+}
+
+
+export function parseBlockette(dataView :DataView, offset: number, length :number, headerByteSwap: boolean) :Blockette {
+  const type = dataView.getUint16(offset, headerByteSwap);
+  const body = new DataView(dataView.buffer, dataView.byteOffset+offset, length);
+  if (type === 1000) {
+    const encoding = body.getUint8(4);
+    const dataRecordLengthByte = body.getUint8(6);
+    const wordOrder = body.getUint8(5);
+    return new Blockette1000(type, body, encoding, dataRecordLengthByte, wordOrder);
+  } else {
+    return new Blockette(type, body);
+  }
 }
 
 /** Represents a SEED Data Record, with header, blockettes and data.
@@ -216,9 +227,9 @@ export class Blockette {
   type: number;
   body: DataView;
 
-  constructor(dataView: DataView, offset: number, length: number, headerByteSwap: boolean) {
-    this.type = dataView.getUint16(offset, headerByteSwap);
-    this.body = new DataView(dataView.buffer, dataView.byteOffset+offset, length);
+  constructor(type: number, body: DataView) {
+    this.type = type;
+    this.body = body;
   }
 }
 
@@ -227,14 +238,12 @@ export class Blockette1000 extends Blockette {
   encoding: number;
   dataRecordLengthByte: number;
   wordOrder: number;
-  constructor(dataView: DataView, offset: number, length: number, headerByteSwap: boolean) {
-    super(dataView, offset, length, headerByteSwap);
-    if (this.type != 1000) {throw new Error("Not a blockette1000: "+this.type);}
-    if (this.type == 1000) {
-      this.encoding = this.body.getUint8(4);
-      this.dataRecordLengthByte = this.body.getUint8(6);
-      this.wordOrder = this.body.getUint8(5);
-    }
+  constructor(type: number, body: DataView, encoding: number, dataRecordLengthByte: number, wordOrder: number) {
+    super(type, body);
+    if (type != 1000) {throw new Error("Not a blockette1000: "+this.type);}
+    this.encoding = encoding;
+    this.dataRecordLengthByte = dataRecordLengthByte;
+    this.wordOrder = wordOrder;
   }
 }
 
@@ -303,7 +312,6 @@ function checkByteSwap(bTime :BTime): boolean {
 export function areContiguous(dr1: DataRecord, dr2: DataRecord) {
     let h1 = dr1.header;
     let h2 = dr2.header;
-    console.log("areContiguous: "+h1.end.toISOString()+" "+h2.start.toISOString()+" "+(h1.end.isBefore(h2.start))+" "+(h1.end.valueOf() + 1000*1.5/h1.sampleRate > h2.start.valueOf()))
     return h1.end.isBefore(h2.start)
         && h1.end.valueOf() + 1000*1.5/h1.sampleRate > h2.start.valueOf();
 }
