@@ -4,7 +4,7 @@ var miniseed = seisplotjs_miniseed;
 
 
 var client = new XMLHttpRequest();
-var url = 'http://service.scedc.caltech.edu/fdsnws/dataselect/1/query?net=CI&sta=BBR&loc=--&cha=BHZ&start=2017-03-01T20:17:04&end=2017-03-01T20:22:04';
+var url = 'http://service.iris.edu/fdsnws/dataselect/1/query?net=CO&sta=JSC&loc=00&cha=HHZ&start=2017-03-01T20:17:04&end=2017-03-01T20:22:04';
 
 var div = d3.select('div.miniseed');
 div.append('p').text(url);
