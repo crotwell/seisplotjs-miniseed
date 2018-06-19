@@ -127,7 +127,6 @@ export class DataRecord {
     // only decompress once as it is expensive operation
     if ( typeof this.decompData === 'undefined') {
       this.decompData = seedcodec.decompress(this.header.encoding, this.data, this.header.numSamples, this.header.littleEndian);
-      this.decompData.header = this.header;
     }
     return this.decompData;
   }
