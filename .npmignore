@@ -1,4 +1,5 @@
 src/
+flow-typed/
 .git
 .DS_Store
 seisplotjs_*_standalone.js
