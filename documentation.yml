@@ -4,7 +4,7 @@ toc:
       Generally either
       ```
       import * as miniseed from 'seisplotjs-miniseed'
-      model.xxxx
+      miniseed.xxxx
       ```
       or
 
