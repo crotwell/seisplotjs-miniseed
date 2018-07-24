@@ -10,7 +10,6 @@
 // special due to flow
 import {hasArgs, hasNoArgs, isStringArg, isNumArg, checkStringOrDate, stringify} from 'seisplotjs-model';
 
-
 import * as seedcodec from 'seisplotjs-seedcodec';
 import * as model from 'seisplotjs-model';
 
@@ -33,6 +32,7 @@ export function parseDataRecords(arrayBuffer: ArrayBuffer) {
   return dataRecords;
 }
 
+/** parse a single DataRecord starting at the beginning of the DataView. */
 export function parseSingleDataRecord(dataView: DataView) {
   let header = parseSingleDataRecordHeader(dataView);
   let data = new DataView(dataView.buffer,
@@ -41,6 +41,7 @@ export function parseSingleDataRecord(dataView: DataView) {
   return new DataRecord(header, data);
 }
 
+/** parse the DataHeader from a single DataRecord starting at the beginning of the DataView. */
 export function parseSingleDataRecordHeader(dataView: DataView) :DataHeader {
   let out = new DataHeader();
   out.seq = makeString(dataView, 0, 6);
@@ -92,7 +93,11 @@ export function parseSingleDataRecordHeader(dataView: DataView) :DataHeader {
   return out;
 }
 
-
+/** parses a Blockette within the DataView.
+  * @param {DataView} dataView containing the data
+  * @param {number} offset offset into the DataView to start
+  * @param {number} length size in bytes of the Blockette
+  */
 export function parseBlockette(dataView :DataView, offset: number, length :number, headerByteSwap: boolean) :Blockette {
   const type = dataView.getUint16(offset, headerByteSwap);
   const body = new DataView(dataView.buffer, dataView.byteOffset+offset, length);

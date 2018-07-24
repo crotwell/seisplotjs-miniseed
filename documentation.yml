@@ -1,0 +1,47 @@
+toc:
+  - name: Usage
+    description: |
+      Generally either
+      ```
+      import * as miniseed from 'seisplotjs-miniseed'
+      model.xxxx
+      ```
+      or
+
+      ```
+      import * as seisplotjs from 'seisplotjs'
+      seisplotjs.miniseed.xxxx
+      ```
+
+  - name: Core Functionality
+    description: |
+      Core functions for parsing miniseed
+  - parseDataRecords
+  - parseSingleDataRecord
+  - parseSingleDataRecordHeader
+  - parseBlockette
+  - parseBTime
+  - areContiguous
+  - createSeismogram
+  - merge
+  - segmentMinMax
+  - byChannel
+
+  - name: Core Classes
+    description: |
+      Core classes returned from the above functions.
+  - DataRecord
+  - DataHeader
+  - Blockette
+  - Blockette1000
+  - BTime
+
+  - name: Re-export
+    description: |
+      Re-exporting imported modules for easier reuse.
+  - seedcodec
+  - model
+
+  - name: Other
+    description: |
+      Stuff I forgot to put in the TOC.
