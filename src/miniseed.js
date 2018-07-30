@@ -375,6 +375,8 @@ export function merge(drList: Array<DataRecord>): Array<model.Seismogram> {
   return out;
 }
 
+
+
 /** Finds the min and max values of a Seismogram, with an optional
   * accumulator for use with gappy data. */
 export function segmentMinMax(segment: model.Seismogram, minMaxAccumulator:? Array<number>) :Array<number> {
@@ -415,5 +417,13 @@ export function byChannel(drList: Array<DataRecord>): Map<string, Array<DataReco
       array.push(currDR);
     }
   }
+  return out;
+}
+
+export function mergeByChannel(drList: Array<DataRecord>): Map<string, Array<model.Seismogram>> {
+  let out = new Map();
+  this.byChannel(drList).forEach((value, key) => {
+    out.set(key, merge(value));
+  });
   return out;
 }
